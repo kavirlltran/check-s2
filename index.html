@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pronunciation Test</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      text-align: center;
+    }
+    .sentence-container {
+      margin-bottom: 30px;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .sentence {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+    .result {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    button {
+      padding: 10px 15px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Kiểm Tra Phát Âm</h1>
+  <p>
+    Hãy đọc to các câu sau. Các từ có dấu <code>'</code> (hoặc dấu <code>‘</code>) đánh dấu trọng âm.
+    Nhấn nút <strong>Record</strong> để kiểm tra phát âm của bạn.
+  </p>
+  
+  <div id="sentences"></div>
+  
+  <script>
+    // Mảng các câu với ký hiệu trọng âm
+    const sentences = [
+      "We should ‘finish the ‘project for our ‘history ‘class",
+      "‘Peter is re‘vising for his e‘xam ‘next ‘week.",
+      "‘Students will ‘spend more ‘time ‘working with ‘other ‘classmates.",
+      "I ‘like to ‘watch ‘videos that ‘help me ‘learn ‘new ‘things",
+      "I have ‘installed some ‘apps on my ‘phone"
+    ];
+    
+    // Hàm loại bỏ các ký hiệu trọng âm (dấu ' hoặc ‘ ’)
+    function removeStressMarkers(text) {
+      return text.replace(/['‘’]/g, "");
+    }
+    
+    const sentencesDiv = document.getElementById("sentences");
+    
+    sentences.forEach((sentence, index) => {
+      // Tạo container cho mỗi câu
+      const container = document.createElement("div");
+      container.className = "sentence-container";
+      container.id = "sentence-container-" + index;
+      
+      // Hiển thị câu
+      const sentenceEl = document.createElement("div");
+      sentenceEl.className = "sentence";
+      sentenceEl.textContent = sentence;
+      container.appendChild(sentenceEl);
+      
+      // Nút Record
+      const recordBtn = document.createElement("button");
+      recordBtn.textContent = "Record";
+      recordBtn.id = "record-btn-" + index;
+      container.appendChild(recordBtn);
+      
+      // Vùng hiển thị kết quả
+      const resultDiv = document.createElement("div");
+      resultDiv.className = "result";
+      resultDiv.id = "result-" + index;
+      container.appendChild(resultDiv);
+      
+      sentencesDiv.appendChild(container);
+      
+      // Sự kiện khi nhấn nút Record
+      recordBtn.addEventListener("click", () => {
+        resultDiv.textContent = "Listening...";
+        startRecognition(index, sentence);
+      });
+    });
+    
+    // Kiểm tra xem trình duyệt có hỗ trợ SpeechRecognition API không
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Trình duyệt của bạn không hỗ trợ Speech Recognition. Vui lòng thử trên Chrome hoặc Edge.");
+    }
+    
+    function startRecognition(index, sentence) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      
+      recognition.start();
+      
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        const cleanSentence = removeStressMarkers(sentence).toLowerCase().trim();
+        const cleanTranscript = transcript.toLowerCase().trim();
+        
+        let feedback = `Bạn nói: "${transcript}"`;
+        // So sánh đơn giản: nếu khớp hoàn toàn, coi như phát âm đúng
+        if (cleanTranscript === cleanSentence) {
+          feedback += " - Tuyệt vời!";
+        } else {
+          feedback += " - Hãy thử lại.";
+        }
+        document.getElementById("result-" + index).textContent = feedback;
+      };
+      
+      recognition.onerror = function(event) {
+        document.getElementById("result-" + index).textContent = "Lỗi: " + event.error;
+      };
+      
+      recognition.onend = function() {
+        // Kết thúc nhận dạng
+      };
+    }
+  </script>
+</body>
+</html>
