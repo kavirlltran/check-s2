@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pronunciation Test</title>
+  <title>Kiểm Tra Phát Âm với Web Speech API</title>
   <style>
     body {
       font-family: sans-serif;
@@ -20,7 +20,7 @@
       border: 1px solid #ccc;
       padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
     .sentence {
       font-size: 1.2em;
@@ -40,14 +40,14 @@
 <body>
   <h1>Kiểm Tra Phát Âm</h1>
   <p>
-    Hãy đọc to các câu sau. Các từ có dấu <code>'</code> (hoặc dấu <code>‘</code>) đánh dấu trọng âm.
+    Hãy đọc to các câu sau. Các từ có dấu <code>'</code> (hoặc <code>‘</code>) đánh dấu trọng âm.
     Nhấn nút <strong>Record</strong> để kiểm tra phát âm của bạn.
   </p>
   
   <div id="sentences"></div>
   
   <script>
-    // Mảng các câu với ký hiệu trọng âm
+    // Danh sách các câu (các dấu ' hoặc ‘ đánh dấu trọng âm)
     const sentences = [
       "We should ‘finish the ‘project for our ‘history ‘class",
       "‘Peter is re‘vising for his e‘xam ‘next ‘week.",
@@ -55,16 +55,23 @@
       "I ‘like to ‘watch ‘videos that ‘help me ‘learn ‘new ‘things",
       "I have ‘installed some ‘apps on my ‘phone"
     ];
-    
-    // Hàm loại bỏ các ký hiệu trọng âm (dấu ' hoặc ‘ ’)
+
+    // Hàm loại bỏ dấu nhấn (dấu ' và ‘ ’)
     function removeStressMarkers(text) {
       return text.replace(/['‘’]/g, "");
     }
-    
+
     const sentencesDiv = document.getElementById("sentences");
-    
+
+    // Kiểm tra sự hỗ trợ của Web Speech API
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Trình duyệt của bạn không hỗ trợ Speech Recognition API. Vui lòng thử trên Chrome hoặc Edge.");
+    }
+
+    // Tạo giao diện cho từng câu
     sentences.forEach((sentence, index) => {
-      // Tạo container cho mỗi câu
+      // Tạo container cho từng câu
       const container = document.createElement("div");
       container.className = "sentence-container";
       container.id = "sentence-container-" + index;
@@ -92,45 +99,39 @@
       // Sự kiện khi nhấn nút Record
       recordBtn.addEventListener("click", () => {
         resultDiv.textContent = "Listening...";
-        startRecognition(index, sentence);
+        startRecognition(index, sentence, resultDiv);
       });
     });
-    
-    // Kiểm tra xem trình duyệt có hỗ trợ SpeechRecognition API không
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Trình duyệt của bạn không hỗ trợ Speech Recognition. Vui lòng thử trên Chrome hoặc Edge.");
-    }
-    
-    function startRecognition(index, sentence) {
+
+    // Hàm sử dụng Web Speech API để nhận dạng giọng nói
+    function startRecognition(index, sentence, resultDiv) {
       const recognition = new SpeechRecognition();
       recognition.lang = "en-US";
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
       
       recognition.start();
-      
+
       recognition.onresult = function(event) {
         const transcript = event.results[0][0].transcript;
         const cleanSentence = removeStressMarkers(sentence).toLowerCase().trim();
         const cleanTranscript = transcript.toLowerCase().trim();
-        
+
         let feedback = `Bạn nói: "${transcript}"`;
-        // So sánh đơn giản: nếu khớp hoàn toàn, coi như phát âm đúng
         if (cleanTranscript === cleanSentence) {
           feedback += " - Tuyệt vời!";
         } else {
           feedback += " - Hãy thử lại.";
         }
-        document.getElementById("result-" + index).textContent = feedback;
+        resultDiv.textContent = feedback;
       };
-      
+
       recognition.onerror = function(event) {
-        document.getElementById("result-" + index).textContent = "Lỗi: " + event.error;
+        resultDiv.textContent = "Lỗi: " + event.error;
       };
-      
+
       recognition.onend = function() {
-        // Kết thúc nhận dạng
+        // Nhận dạng kết thúc, có thể cập nhật giao diện nếu cần
       };
     }
   </script>
